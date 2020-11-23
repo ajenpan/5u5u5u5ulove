@@ -1,0 +1,320 @@
+<iframe scrolling="auto" allowtransparency="true" id="xubox_iframe1" name="xubox_iframe1"
+	onload="this.className='xubox_iframe'" class="xubox_iframe" frameborder="0"
+	src="https://hz.5u5u5u5u.com:443/learning/popup/inspect_ques2.jsp?type=1&amp;frequency=5&amp;time=1&amp;verifyNotPassStyle=1&amp;timeoutStyle=1&amp;resType=1"
+	style="width: 432px; height: 252px; top: 0px;">
+	<html xmlns="http://www.w3.org/1999/xhtml">
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<link href="/learning/popup/css/global.css?version=V1.0.1.2" type="text/css" rel="stylesheet">
+		<link href="/learning/popup/css/pop_bg.css?version=V1.0.1.2" type="text/css" rel="stylesheet">
+		<script src="/commonFiles/jquery-1.8.3.js?version=V1.0.1.2"></script>
+		<script type="text/javascript"
+			src="https://hz.5u5u5u5u.com:443/commonFiles/layer/layer.js?version=V1.0.1.2"></script>
+		<link type="text/css" rel="stylesheet" href="https://hz.5u5u5u5u.com/commonFiles/layer/skin/layer.css"
+			id="skinlayercss">
+		<title>模拟练习提示</title>
+		<style>
+			.xxym {
+				height: 35px;
+				background: url(https://hz.5u5u5u5u.com:443/learning/newhome/images/icon_1.png) no-repeat #f8f8f8 8px 8px;
+				line-height: 35px;
+				padding-left: 35px;
+				font-size: 14px;
+			}
+
+			.color1 {
+				color: #ff9000;
+			}
+
+			img#validateImg {
+				vertical-align: middle;
+			}
+		</style>
+		<script>
+			var time = '5' - 0;//次数
+			var castTime = '1' - 0;
+			/*-- 验证类型  1:签到 2:验证 3:签退 --*/
+			var validateType = '1' - 0;
+			var countFlag = true;
+			var perCast;
+			var systemId = '3301';
+
+
+			//后台验证
+			function InpectvalidateCode(result) {
+				$.ajax({
+					url: "/learning_json/inpectvalidateCode.action", //url需重定义
+					type: "post",
+					data: "result=" + result,
+					async: false,
+					type: 'post',
+					success: function (json) {
+						if (json.msg != "success") {
+							nextInpect();
+						} else {
+							countFlag = false;
+							parent.validate(1, validateType, null, json.code);
+							try {
+								window.parent.closeCur();
+							} catch (e) {
+							}
+						}
+					}
+				});
+			}
+
+			//获取点击位置
+			function getSelPic() {
+				var ret = "";
+				$(".sel").each(function () {
+					ret += $(this).attr("data") + "_";
+				})
+				return ret;
+			}
+
+			$(function () {
+				castTime = castTime * 60;
+				$(".queding_btn").click(function () {
+					countFlag = false;
+					var result = getSelPic();
+					InpectvalidateCode(result);
+				});
+				$(".quxiao_btn").click(function () {
+					closeFun();
+				});
+				$(".close_btn").click(function () {
+					closeFun();
+				});
+				$(".fresh_btn").click(function () {
+					nextInpect();
+				});
+
+
+				//首次生成题目
+				perCast = castTime;
+				randomQuestion();
+				countFlag = true;
+				startTime();
+
+				$(".tt").dblclick(function () {//删广告
+					$('body').children().each(function () {
+						if (!$(this).attr('class') || $(this).attr('class').indexOf('5u') == -1) {
+							console.log($(this).attr('class'));
+							$(this).hide();
+						}
+					})
+				});
+
+				showTips();
+			});
+
+			function closeFun() {
+				var current_i = $.layer({
+					closeBtn: false,
+					shade: [0.5, '#000', true],
+					area: ['410px', '160px'],
+					border: [8, 1, '#b8c9f5', true],
+					offset: ['10px', '5px'],
+					move: false,
+					dialog: {
+						msg: '是否强制退出，若退出，将无法记录您的学时！',
+						btns: 2,
+						type: 4,
+						btn: ['确定', '取消'],
+						yes: function () {
+							//取消验证
+							parent.validate(0, validateType);
+							layer.close(current_i);
+							window.parent.closeCur();
+						},
+						no: function () {
+							layer.close(current_i);
+						}
+					}
+				});
+			}
+
+			//提示语修改
+			function showTips() {
+				if (validateType == 1) {
+					$(".xxym").html("<span class='color1 5u'>温馨提示：</span>只有通过验证，系统才开始记录您的学时哦！");
+				} else if (validateType == 2) {
+					$(".xxym").html("<span class='color1 5u'>温馨提示：</span>只有通过验证，系统才能继续记录您的学时哦！");
+				}
+			}
+
+			/**
+			 * 随机生成题目
+			 */
+			function randomQuestion() {
+				$("#validateImg").attr("src", "/imageServlet?systemId=" + systemId + "&time=" + Math.random());
+				$(".sel").remove();
+				titleCountdown();
+			}
+
+			function titleCountdown() {
+				var title_content = '';
+				if (validateType == 1) {
+					title_content = '签到验证';
+				} else if (validateType == 2) {
+					title_content = "随机验证";
+				} else if (validateType == 3) {
+					title_content = "签退验证";
+				}
+				$(".tt").html(title_content + "(剩余" + perCast + " 秒," + time + "次机会)");
+			}
+
+
+			function startTime() {
+				titleCountdown();
+				if (!countFlag) {
+					return;
+				}
+				if (perCast < 1) {
+					var cur_i = $.layer({
+						area: ['410px', 'auto'],
+						shade: [0.5, '#000', true],
+						border: [8, 1, '#b8c9f5', true],
+						offset: ['10px', '5px'],
+						dialog: {
+							msg: '您已超过验证时间，将退出学习。',
+							type: 8,
+							btns: 1,
+							btn: ['确定'],
+							yes: function (index) {
+								parent.validate(0, validateType);
+								layer.close(cur_i);
+								window.parent.closeDialog();
+							}
+						},
+						close: function (index) {
+							layer.close(cur_i);
+							window.parent.closeDialog();
+							window.parent.toLessonList();
+						}
+					});
+					return;
+				}
+				perCast--;
+				setTimeout("startTime()", 1000);
+			}
+
+			//再次验证
+			function nextInpect() {
+				countFlag = false;
+				time--;
+				if (time <= 0) {
+					// 		window.parent.closeCur();
+					parent.validate(-1, validateType);
+					return;
+				}
+				perCast = castTime;
+				randomQuestion();
+				countFlag = true;
+			}
+
+
+
+
+
+
+
+			var JPos = {};
+			(function ($) {
+				$.$getAbsPos = function (p) {
+					var _x = 0;
+					var _y = 0;
+					while (p.offsetParent) {
+						_x += p.offsetLeft;
+						_y += p.offsetTop;
+						p = p.offsetParent;
+					}
+
+					_x += p.offsetLeft;
+					_y += p.offsetTop;
+
+					return { x: _x, y: _y };
+				};
+
+				$.$getMousePos = function (evt) {
+					var _x, _y;
+					evt = window.event || evt;
+					if (evt.pageX || evt.pageY) {
+						_x = evt.pageX;
+						_y = evt.pageY;
+					} else if (evt.clientX || evt.clientY) {
+						_x = evt.clientX + document.body.scrollLeft - document.body.clientLeft;
+						_y = evt.clientY + document.body.scrollTop - document.body.clientTop;
+					} else {
+						return $.$getAbsPos(evt.target);
+					}
+					return { x: _x, y: _y };
+				}
+			})(JPos);
+
+			function vControl(pChoice, dom, e) {
+				switch (pChoice) {
+					case "GETMOUSEPOSINPIC":
+						var mPos = JPos.$getMousePos(e);
+						var iPos = JPos.$getAbsPos(arguments[1]);
+						window.status = (mPos.x - iPos.x) + " " + (mPos.y - iPos.y);
+						setSel((mPos.x - iPos.x + 44), (mPos.y - iPos.y + 32))
+
+						break;
+				}
+			}
+
+			function setSel(x, y) {
+				var i = $(".sel").last().html();
+				if (!i) {
+					i = 1;
+				} else {
+					i = i - 0 + 1;
+				}
+				var html = "<a class='5u sel' data='" + Math.round(x - 44) + "," + Math.round(y - 32) + "' onclick='delThis(this)' style='position: absolute; left:" + x + "px; top:" + y + "px'>" + i + "</a>";
+				$(".imgCon").append(html);
+			}
+
+			function delThis(doc) {
+				var i = $(doc).html() - 0;
+				$(".sel").each(function () {
+					if (i <= $(this).html() - 0) {
+						$(this).remove();
+					}
+				});
+			}
+		</script>
+	</head>
+
+	<body class="5u" data-new-gr-c-s-check-loaded="14.984.0" data-gr-ext-installed="">
+		<div class="bg 5u" style="width:420px; height:240px;">
+			<div class="neikuang 5u" style="height:237px;">
+				<div class="pop_top_bg 5u">
+					<div class="tt 5u">签到验证(剩余58 秒,5次机会)</div>
+					<div class="close_btn 5u"></div>
+					<div style=" margin-left:40px;" class="fresh_btn fl 5u"></div>
+				</div>
+				<div class="cont 5u" style=" width:418px; height:206px;">
+					<div class="fl 5u imgCon" style=" margin:0px 0 0 45px;">
+						<img id="validateImg" class="5u" onclick="vControl('GETMOUSEPOSINPIC',this,event)"
+							src="/imageServlet?systemId=3301&amp;time=0.826542307999284">
+					</div>
+					<div style=" clear:both;" class="5u"></div>
+					<div style=" margin:10px auto;  width:130px;" class="5u">
+						<div class="queding_btn fl 5u"></div>
+						<div style=" margin-left:10px;" class="quxiao_btn fl 5u"></div>
+					</div>
+					<div style=" clear:both;" class="5u"></div>
+					<div class="xxym 5u" style="width:383px;"><span class="color1 5u">温馨提示：</span>只有通过验证，系统才开始记录您的学时哦！
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+	</body>
+
+	</html>
+</iframe>
